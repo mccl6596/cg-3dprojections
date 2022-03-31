@@ -3,13 +3,14 @@ let ctx;
 let scene;
 let start_time;
 
+//
 const LEFT =   32; // binary 100000
 const RIGHT =  16; // binary 010000
 const BOTTOM = 8;  // binary 001000
 const TOP =    4;  // binary 000100
 const FAR =    2;  // binary 000010
 const NEAR =   1;  // binary 000001
-const FLOAT_EPSILON = 0.000001;
+const FLOAT_EPSILON = 0.000001; // would cause an inf. loop
 
 // Initialization function - called when web page loads
 function init() {
@@ -54,7 +55,7 @@ function init() {
                     [3, 8],
                     [4, 9]
                 ],
-                matrix: new Matrix(4, 4)
+                matrix: new Matrix(4, 4) //can store rotation
             }
         ]
     };
@@ -79,6 +80,7 @@ function animate(timestamp) {
     drawScene();
 
     // step 4: request next animation frame (recursively calling same function)
+    //uncomment when ready to animate
     // (may want to leave commented out while debugging initially)
     // window.requestAnimationFrame(animate);
 }
@@ -142,18 +144,67 @@ function outcodePerspective(vertex, z_min) {
     }
     return outcode;
 }
+function trivialAccept(a, b) {
+    if (a | b == 0) {
+        return true;
+    }
+    return false;
+}
+function trivialReject(a, b) {
+    if (a & b != 0) {
+        return true;
+    }
+    return false;
+}
+
+function validRangeParallel(x, y, z) {
+
+}
+function parametricLine(a0, a1, t) {
+    let fin = a0 + t * (a1 - a0);
+    return fin;
+}
+function findT(a, a0, a1) {
+    let T = (a-a0)/(a1-a0);
+    return T;
+}
+
+function newParallelPoint(line){
+    let y0 = 1;
+    let y1 = -1;
+    let x0 = 1;
+    let x1 = -1;
+    let z0 = 0;
+    let z1 = -1;
+    //y0=1
+    let ty0 = findT(y0, line.pt0.y, line.pt1.y);
+    if (-1 >= ty0 >= 1) {
+        let x = parametricLine(line.pt0.x, line.pt1.x, ty0);
+        let z = parametricLine(line.pt0.z, line.pt1.z, ty0);
+
+    }
+
+}
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
     let result = null;
-    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
+    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); // still need to reference the orginal points
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
-    
-    // TODO: implement clipping here!
-    
-    return result;
+    if (trivialAccept(out0, out1)) {
+        return line;
+    } else if (trivialReject(out0, out1)) {
+        return result;
+    } else {
+        if (out0 > 0) {
+
+        } else if (out1 > 0) {
+
+        }
+        return result;
+    }
 }
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
