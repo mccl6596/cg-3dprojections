@@ -170,6 +170,7 @@ function findT(a, a0, a1) {
 }
 
 function newParallelPoint(line){
+    let boolean = false;
     let y0 = 1;
     let y1 = -1;
     let x0 = 1;
@@ -195,16 +196,16 @@ function clipLineParallel(line) {
     let out1 = outcodeParallel(p1);
     if (trivialAccept(out0, out1)) {
         return line;
-    } else if (trivialReject(out0, out1)) {
-        return result;
-    } else {
-        if (out0 > 0) {
-
-        } else if (out1 > 0) {
-
-        }
+    }
+    if (trivialReject(out0, out1)) {
         return result;
     }
+    if (out0 > 0) {
+
+    } else if (out1 > 0) {
+
+    }
+    return result;
 }
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
