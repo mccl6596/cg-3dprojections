@@ -60,6 +60,7 @@ function init() {
         ]
     };
 
+
     // event handler for pressing arrow keys
     document.addEventListener('keydown', onKeyDown, false);
     
@@ -88,7 +89,6 @@ function animate(timestamp) {
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
     console.log(scene);
-    
     // TODO: implement drawing here!
     // For each model, for each edge
     //  * transform to canonical view volume

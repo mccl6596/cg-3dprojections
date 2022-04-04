@@ -1,27 +1,52 @@
-import Matrix from 'matrix.js';
-mat4x4Perspective([0,10,-5],[20,15,-40], [1,1,0], [-12,6,-12,6,10,100] );
-
-
-
+console.log(mat4x4Perspective([0,10,-5],[20,15,-40], [1,1,0], [-12,6,-12,6,10,100] ));
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
+    let n = new Vector(3);
+    n = n.normalize(prp-srp);
+    let u = new Vector(3);
+    u = u.normalize(vup*n);
+    let v = n*u;
+    let dop = Vector3((clip[0]+clip[1])/2,(clip[2]+clip[3])/2,-(clip[4]));
+    let start = new Matrix(4, 4);
+    let matrix = mat4x4Identity(start);
     // 1. translate PRP to origin
-
+    matrix = Mat4x4Translate(matrix, prp[0], prp[1], prp[2]);
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+    let R = new Matrix(4, 4);
+    R.values = [[u[0], u[1], u[2], 0],
+        [v[0], v[1], v[2], 0],
+        [n[0], n[1], n[2], 0],
+        [0, 0, 0, 1]];
+    //translate front clipping plane to origin
+    let Tpar = new Matrix(4, 4);
+    Tpar.values = [[1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, clip[4]],
+        [0, 0, 0, 1]];
     // 3. shear such that CW is on the z-axis
-    // 4. translate near clipping plane to origin
-    // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
-
-    // ...
-    // let transform = Matrix.multiply([...]);
-    // return transform;
+    let SHx= -(dop[0])/dop[2];
+    let SHy= -(dop[1])/dop[2];
+    let SHpar = new Matrix(4,4);
+    SHpar = Mat4x4ShearXY(SHpar, SHx, SHy);
+    // 4. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
+    let Sparx = 2/(clip[1]-clip[0]);
+    let Spary = 2/(clip[3]-clip[2]);
+    let Sparz = 1 / (clip[5]-clip[4]);
+    let Spar = new Matrix(4,4);
+    Spar = Mat4x4Scale(Spar, Sparx, Spary, Sparz);
+    let view = Matrix.multiply(R, matrix);
+    let projection = Matrix.multiply(Spar, SHpar, Tpar);
+    let Nper = Matrix.multiply(projection, view);
+    //clip against the view fustrum?
+    let transform = Matrix.multiply(mat4x4MPer(), Nper);
+    return transform;
 }
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
-    let n = new Matrix(3, 1);
+    let n = new Vector(3);
     n = n.normalize(prp-srp);
-    let u = new Matrix(3, 1);
+    let u = new Vector(3);
     u = u.normalize(vup*n);
     let v = n*u;
     let dop = Vector3((clip[0]+clip[1])/2,(clip[2]+clip[3])/2,-(clip[4]));
@@ -149,3 +174,6 @@ function Vector4(x, y, z, w) {
     vec4.values = [x, y, z, w];
     return vec4;
 }
+
+
+
