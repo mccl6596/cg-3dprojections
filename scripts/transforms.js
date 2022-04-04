@@ -1,6 +1,12 @@
+import Matrix from 'matrix.js';
+mat4x4Perspective([0,10,-5],[20,15,-40], [1,1,0], [-12,6,-12,6,10,100] );
+
+
+
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
     // 1. translate PRP to origin
+
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
     // 3. shear such that CW is on the z-axis
     // 4. translate near clipping plane to origin
@@ -13,28 +19,58 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
+    let n = new Matrix(3, 1);
+    n = n.normalize(prp-srp);
+    let u = new Matrix(3, 1);
+    u = u.normalize(vup*n);
+    let v = n*u;
+    let dop = Vector3((clip[0]+clip[1])/2,(clip[2]+clip[3])/2,-(clip[4]));
+    let start = new Matrix(4, 4);
+    let matrix = mat4x4Identity(start);
     // 1. translate PRP to origin
+    matrix = Mat4x4Translate(matrix, prp[0], prp[1], prp[2]);
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
+    let R = new Matrix(4, 4);
+    R.values = [[u[0], u[1], u[2], 0],
+        [v[0], v[1], v[2], 0],
+        [n[0], n[1], n[2], 0],
+        [0, 0, 0, 1]];
     // 3. shear such that CW is on the z-axis
+    let SHx= -(dop[0])/dop[2];
+    let SHy= -(dop[1])/dop[2];
+    let SHper = new Matrix(4,4);
+    SHper = Mat4x4ShearXY(SHper, SHx, SHy);
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
-
-    // ...
-    // let transform = Matrix.multiply([...]);
-    // return transform;
+    let Sperx = (2*clip[4])/((clip[1]-clip[0])*clip[5]);
+    let Spery = (2*clip[4])/((clip[3]-clip[2])*clip[5]);
+    let Sperz = 1 / clip[5];
+    let Sper = new Matrix(4,4);
+    Sper = Mat4x4Scale(Sper, Sperx, Spery, Sperz);
+    let view = Matrix.multiply(R, matrix);
+    let projection = Matrix.multiply(Sper, SHper);
+    let Nper = Matrix.multiply(projection, view);
+    //clip against the view fustrum?
+    let transform = Matrix.multiply(mat4x4MPer(), Nper);
+    return transform;
 }
 
 // create a 4x4 matrix to project a parallel image on the z=0 plane
 function mat4x4MPar() {
     let mpar = new Matrix(4, 4);
-
-    // mpar.values = ...;
+    mper.values = [[1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 0]];
     return mpar;
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
 function mat4x4MPer() {
     let mper = new Matrix(4, 4);
-    // mper.values = ...;
+    mper.values = [[1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, -1, 0]];
     return mper;
 }
 
@@ -59,8 +95,6 @@ function Mat4x4Translate(mat4x4, tx, ty, tz) {
                     [0, 0, 1, -(tz)],
                     [0, 0, 0, 1]];
 }
-
-//will i need to do that math?
 
 // set values of existing 4x4 matrix to the scale matrix
 function Mat4x4Scale(mat4x4, sx, sy, sz) {
